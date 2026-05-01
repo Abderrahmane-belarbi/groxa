@@ -11,13 +11,10 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <Text className="text-red-800 mb-10">
-        Edit <Text className="text-blue-500 text-3xl">app/index.tsx</Text> to
-        get started!
-      </Text>
-      <Link href={"/login"}>Go to Login</Link>
-      <Link href={"/register"} style={{ marginTop: 20 }}>
-        Go to Sign up
+      <Text>Welcome to Groxa!</Text>
+      <Link href={"/(auth)/sign-in"}>Login</Link>
+      <Link href={"/(auth)/sign-up"} style={{ marginTop: 20 }}>
+        Sign up
       </Link>
     </View>
   );
