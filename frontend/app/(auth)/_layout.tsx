@@ -1,4 +1,8 @@
-import { Stack } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 export default function AuthLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  const isSignedIn = true;
+  if (isSignedIn) {
+        return <Redirect href="/(tabs)" />;
+    }
+  return <Stack/>;
 }
