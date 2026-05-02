@@ -2,10 +2,10 @@ import { Link } from "expo-router";
 import { Text, View } from "react-native";
 
 export default function SignIn() {
-    return (
-        <View>
-            <Text>Sign In</Text>
-            <Link href={"/(auth)/sign-up"}>Don't have an account? Create one</Link>
-        </View>
-    )
+  return (
+    <View>
+      <Text>Sign In</Text>
+      <Link href={"/(auth)/sign-up"}>Don't have an account? Create one</Link>
+    </View>
+  );
 }
