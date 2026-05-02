@@ -1,6 +1,6 @@
 import { tabs } from "@/constants/data";
 import { Tabs } from "expo-router";
-import { Image, View } from "react-native";
+import { Image, ImageSourcePropType, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
@@ -47,13 +47,13 @@ export default function TabsLayout() {
   );
 }
 
-function TabIcon({ focused, icon }: { focused: boolean; icon: string }) {
+function TabIcon({ focused, icon }: { focused: boolean; icon: ImageSourcePropType }) {
   return (
     <View className="size-12 items-center justify-center">
       <View
-        className={`size-12 items-center justify-center rounded-full bg-transparent ${focused && "#fff"}`}
+        className={`size-12 items-center justify-center rounded-full bg-transparent ${focused && "bg-white/20"}`}
       >
-        <Image src={icon} resizeMode="contain" className="size-6" />
+        <Image source={icon} resizeMode="contain" className="size-6" />
       </View>
     </View>
   );
