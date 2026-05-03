@@ -8,7 +8,16 @@ module.exports = {
       colors: {
         background: "#FFF9E300",
         primary: "#EA7A53",
-      }
+      },
+      fontFamily: {
+        sans: ["sans-regular"],
+        "sans-light": ["sans-light"],
+        "sans-medium": ["sans-medium"],
+        "sans-semibold": ["sans-semibold"],
+        "sans-bold": ["sans-bold"],
+        "sans-extrabold": ["sans-extrabold"],
+      },
+
     },
   },
   plugins: [],
