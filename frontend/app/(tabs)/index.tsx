@@ -6,7 +6,7 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 export default function Index() {
   return (
-    <SafeAreaView className="flex-1 items-center p-4" >
+    <SafeAreaView className="flex-1 items-center p-4 bg-[#FFF7E5]" >
       <HomeHeader />
       <BalanceCard balance={1250.5} date={new Date()} />
       <View className="w-full mt-4 mb-2">

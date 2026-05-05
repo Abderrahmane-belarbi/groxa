@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 
 type ListHeadingProps = {
