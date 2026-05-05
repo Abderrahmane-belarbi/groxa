@@ -18,7 +18,7 @@ export default function Index() {
       <View className="w-full mt-4 mb-2">
         <ListHeading title="All Subscriptions" link="/subscriptions" />
         <SubscriptionCard
-          {...HOME_SUBSCRIPTIONS[1]}
+          {...HOME_SUBSCRIPTIONS[2]}
         />
       </View>
     </SafeAreaView>
