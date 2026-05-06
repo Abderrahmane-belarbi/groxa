@@ -10,7 +10,7 @@ type UpcomingCardProps = {
 
 export default function UpcomingCard({ name, price, daysLeft, icon }: UpcomingCardProps) {
   return (
-    <View className="px-[14px] py-5 mr-4 border border-[#C6BFA2] gap-3 rounded-2xl">
+    <View className="px-[14px] py-5 border border-[#C6BFA2] gap-3 rounded-2xl">
       <View className="flex-row items-center gap-[10px]">
         <View className="items-center justify-center size-12 rounded-[10px] bg-[#F6ECC9]">
           <Image

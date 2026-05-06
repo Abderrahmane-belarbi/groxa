@@ -4,11 +4,12 @@ import { UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
 
 export default function UpcomingSubscriptions() {
   return (
-    <View className="w-full py-4 px-5 rounded-tr-[20px] rounded-bl-[20px] gap-4">
+    <View className="w-full rounded-tr-[20px] rounded-bl-[20px] gap-4">
       <View className="flex-row justify-between items-center">
         <FlatList
           data={UPCOMING_SUBSCRIPTIONS}
           keyExtractor={(item) => item.id}
+          ItemSeparatorComponent={() => <View className="w-4" />}
           renderItem={({ item }) => (
             <UpcomingCard
               name={item.name}
