@@ -7,18 +7,18 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 export default function Index() {
   return (
-    <SafeAreaView className="flex-1 items-center p-4 bg-[#FFF7E5]" >
-      <ScrollView>
-      <HomeHeader />
-      <BalanceCard balance={1250.5} date={new Date()} />
-      <View className="w-full mt-4 mb-2">
-        <ListHeading title="Upcoming" link="/subscriptions" />
-        <UpcomingSubscriptions />
-      </View>
-      <View className="w-full mt-4 mb-2">
-        <ListHeading title="All Subscriptions" link="/subscriptions" />
-        <SubscriptionsList />
-      </View>
+    <SafeAreaView className="flex-1 items-center p-4 bg-[#FFF7E5]">
+      <ScrollView showsHorizontalScrollIndicator={false}>
+        <HomeHeader />
+        <BalanceCard balance={1250.5} date={new Date()} />
+        <View className="w-full mt-4 mb-2">
+          <ListHeading title="Upcoming" link="/subscriptions" />
+          <UpcomingSubscriptions />
+        </View>
+        <View className="w-full mt-4 mb-20">
+          <ListHeading title="All Subscriptions" link="/subscriptions" />
+          <SubscriptionsList />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
