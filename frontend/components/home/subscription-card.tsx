@@ -1,27 +1,42 @@
 import { formatCurrency, formatSubscriptionDateTime } from "@/lib/utils";
 import { Subscription } from "@/types/types";
-import { Image, Text, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 
-export default function SubscriptionCard({ name, renewalDate, billing, icon, price, color }: Partial<Subscription>) {
+export default function SubscriptionCard({
+  name,
+  renewalDate,
+  billing,
+  icon,
+  price,
+  color,
+  expanded,
+  onPress,
+}: Partial<Subscription> & { expanded: boolean; onPress: () => void }) {
   return (
-    <View 
-      className={`p-6 mb-4 rounded-tr-3xl rounded-bl-3xl flex-row items-center justify-between gap-5`}
-      style={{ backgroundColor: color || '#ffffff' }}
+    <Pressable
+      className={`p-6 mb-4 rounded-tr-3xl rounded-bl-3xl flex-row items-center justify-between gap-5 ${expanded ? "bg-[#E6F0FF]" : ""}`}
+      style={{ backgroundColor: color || "#ffffff" }}
+      onPress={onPress}
     >
       <View className="flex-row items-center gap-4">
-        <Image
-          className="size-8"
-          source={icon}
-        />
+        <Image className="size-8" source={icon} />
         <View className="gap-2">
           <Text className="text-lg font-sans-bold text-[#081226]">{name}</Text>
-          <Text className="text-sm font-sans-semibold text-[#435875]">{renewalDate ? formatSubscriptionDateTime(renewalDate) : 'No renewal date'}</Text>
+          <Text className="text-sm font-sans-semibold text-[#435875]">
+            {renewalDate
+              ? formatSubscriptionDateTime(renewalDate)
+              : "No renewal date"}
+          </Text>
         </View>
       </View>
       <View className="gap-2">
-        <Text className="text-lg font-sans-bold text-[#081226]">{formatCurrency(price || 0)}</Text>
-        <Text className="text-sm font-sans-medium text-[#435875]">{billing}</Text>
+        <Text className="text-lg font-sans-bold text-[#081226]">
+          {formatCurrency(price || 0)}
+        </Text>
+        <Text className="text-sm font-sans-medium text-[#435875]">
+          {billing}
+        </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }

@@ -3,11 +3,12 @@ import HomeHeader from "@/components/home/home-header";
 import SubscriptionsList from "@/components/home/subscriptions-list";
 import UpcomingSubscriptions from "@/components/home/upcoming-subscribtions";
 import ListHeading from "@/components/shared/list-heading";
-import { View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 export default function Index() {
   return (
     <SafeAreaView className="flex-1 items-center p-4 bg-[#FFF7E5]" >
+      <ScrollView>
       <HomeHeader />
       <BalanceCard balance={1250.5} date={new Date()} />
       <View className="w-full mt-4 mb-2">
@@ -18,6 +19,7 @@ export default function Index() {
         <ListHeading title="All Subscriptions" link="/subscriptions" />
         <SubscriptionsList />
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
