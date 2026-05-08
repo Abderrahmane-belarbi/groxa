@@ -6,6 +6,7 @@ import { connectToDatabase } from "./config/db";
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
+const port = Number(process.env.PORT) ?? 5000;
 
 // Middleware
 app.use(express.json()); // Parse JSON bodies
@@ -15,14 +16,14 @@ app.get("/check", (req, res) => {
   res.json({ message: "Server is running!" });
 });
 
-async function start() {
+async function startServer() {
   await connectToDatabase();
-  app.listen(process.env.PORT || 5000, () => {
-    console.log(`Server is running on port ${process.env.PORT || 5000}`);
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
   });
 }
 
-start().catch((error) => {
+startServer().catch((error) => {
   console.error("Error starting server:", error);
   process.exit(1);
 });
