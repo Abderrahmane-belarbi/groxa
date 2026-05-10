@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { registerSchema } from "../lib/validations/auth.validation";
+import { loginSchema, registerSchema } from "../lib/validations/auth.validation";
 import { z } from "zod";
 import { User } from "../models/user.model";
 import bcrypt from "bcryptjs";
@@ -43,6 +43,45 @@ export async function register(req: Request, res: Response) {
   } catch (error) {
     console.error("Error in register controller:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function login(req: Request, res: Response)  {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ message: "Email and password are required" });
+  try {
+    const result = await loginSchema.safeParseAsync({ email, password });
+    if (!result.success) {
+      const Flaterrors = z.flattenError(result.error).fieldErrors;
+      const errors = {
+        email: Flaterrors.email?.[0] || undefined,
+        password: Flaterrors.password?.[0] || undefined,
+      }
+      return res.status(400).json({ message: "Validation failed", errors });
+    }
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) return res.status(400).json({ message: "Invalid email or password" });
+
+    const isPasswordValid = await bcrypt.compare(password, user.password!);
+    if (!isPasswordValid) return res.status(400).json({ message: "Invalid email or password" });
+
+    if (!user.emailVerified) return res.status(403).json({ message: "Please verify your email before logging in" });
+
+    // jwt
+    generateTokenSetCookie(res, user._id);
+
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        emailVerified: user.emailVerified ? true : false,
+      },
+    });
+  } catch (error) {
+
   }
 }
 
