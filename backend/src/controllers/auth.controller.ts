@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { generateVerificationToken, generateVerificationTokenExpiresAt } from "../utils/generate-verification-token";
 import { generateTokenSetCookie } from "../utils/generate-token-cookie";
 
-export async function register(req: Request, res: Response) {
+export async function Register(req: Request, res: Response) {
   const { name, email, password } = req.body;
   if(!name || !email || !password) return res.status(400).json({ message: "All fields are required" })
   try {
