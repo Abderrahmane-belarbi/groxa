@@ -81,7 +81,10 @@ export async function login(req: Request, res: Response)  {
       },
     });
   } catch (error) {
-
+    console.error("Error in login controller:", error);
+    let message = "Internal server error";
+    error instanceof Error && (message = error.message);
+    return res.status(500).json({ message });
   }
 }
 
@@ -127,6 +130,7 @@ export async function verificationEmail(req: Request, res: Response) {
       },
     });
   } catch (error) {
+    console.error("Error in verificationEmail controller:", error);
     let message = "Internal server error";
     error instanceof Error && (message = error.message);
     return res.status(500).json({ message });
