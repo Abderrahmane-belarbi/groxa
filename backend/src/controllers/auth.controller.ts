@@ -5,6 +5,9 @@ import { User } from "../models/user.model";
 import bcrypt from "bcryptjs";
 import { generateVerificationToken, generateVerificationTokenExpiresAt } from "../utils/generate-verification-token";
 import { generateTokenSetCookie } from "../utils/generate-token-cookie";
+import { sendMail } from "../config/google-mailer";
+import { OAuth2Client } from "google-auth-library";
+import crypto from "crypto";
 
 export async function Register(req: Request, res: Response) {
   const { name, email, password } = req.body;
@@ -36,6 +39,12 @@ export async function Register(req: Request, res: Response) {
       role: "user",
       emailVerificationToken: verificationToken,
       emailVerificationTokenExpires: verificationTokenExpiresAt,
+    });
+
+    await sendMail({
+      to: newUser.email,
+      subject: "Verify your email",
+      text: `Your verification code is ${verificationToken}`,
     });
 
     res.status(201).json({ message: "User registered successfully", user: newUser });
@@ -134,5 +143,107 @@ export async function verificationEmail(req: Request, res: Response) {
     let message = "Internal server error";
     error instanceof Error && (message = error.message);
     return res.status(500).json({ message });
+  }
+}
+
+function getGoogleClient() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = process.env.MODE === "development" ? process.env.LOCAL_GOOGLE_REDIRECT_URI : process.env.PUBLIC_GOOGLE_REDIRECT_URI;
+  if(!clientId || !clientSecret || !redirectUri) throw new Error("Google client credentials not found");
+  return new OAuth2Client({
+    clientId,
+    clientSecret,
+    redirectUri,
+  })
+}
+
+function setGoogleOAuthStateCookie(res: Response, state: string) {
+  res.cookie("google_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.MODE !== "development",
+    sameSite: "lax",
+    maxAge: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+function clearGoogleOAuthStateCookie(res: Response) {
+  res.clearCookie("google_oauth_state", {
+    httpOnly: true,
+    secure: process.env.MODE !== "development",
+    sameSite: "lax",
+  });
+}
+
+export async function googleLoginHandler(req: Request, res: Response) {
+  try {
+    const client = getGoogleClient();
+    const state = crypto.randomBytes(32).toString("hex");
+    setGoogleOAuthStateCookie(res, state);
+    const url = client.generateAuthUrl({
+      access_type: "offline",
+      scope: ["openid", "profile", "email"],
+      prompt: "consent",
+      state // for CSRF protection
+    });
+    return res.redirect(url);
+  } catch (error) {
+    let message = "Internal server error";
+    error instanceof Error && (message = error.message);
+    return res.status(500).json({ error: message });
+  }
+}
+
+export async function googleCallbackHandler(req: Request, res: Response) {
+  const code = req.query.code;
+  const state = req.query.state;
+  const stateFromCookie = req.cookies?.google_oauth_state;
+  if(!code) return res.status(400).json({ error: "Code not found" });
+  if(!state || !stateFromCookie || state !== stateFromCookie) {
+    clearGoogleOAuthStateCookie(res);
+    return res.status(400).json({ error: "Invalid OAuth state" });
+  }
+  try {
+    clearGoogleOAuthStateCookie(res);
+    const client = getGoogleClient();
+    const { tokens } = await client.getToken(code);
+    if(!tokens?.id_token) return res.status(400).json({ error: "Google ID token not found" });
+    // verify token and read the user info from it
+    const ticket = await client.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload) {
+      return res.status(400).json({ error: "Invalid Google token payload" });
+    }
+    const email = payload?.email;
+    const emailVerified = payload?.email_verified;
+    if(!email || !emailVerified) return res.status(400).json({ error: "Email not verified" });
+    const emailNormalized = email.toLowerCase().trim();
+    let user = await User.findOne({email: emailNormalized});
+
+    if(!user) {      
+      user = await User.create({
+        name: payload?.name,
+        email: emailNormalized,
+        password: undefined,
+        emailVerified: new Date(),
+      })
+    } else {
+      if(!user.emailVerified) {
+        user.emailVerified = new Date();
+        user.emailVerificationToken = null;
+        user.emailVerificationTokenExpires = null;
+      }
+      await user.save();
+    }
+    generateTokenSetCookie(res, user._id);
+    const redirectUrl =  `${process.env.MODE === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`
+    return res.redirect(redirectUrl);
+  } catch (error) {
+    let message = "Internal server error";
+    error instanceof Error && (message = error.message);
+    return res.status(500).json({ error: message });
   }
 }
