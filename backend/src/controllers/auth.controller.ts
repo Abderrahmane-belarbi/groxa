@@ -195,7 +195,8 @@ export async function googleLoginHandler(req: Request, res: Response) {
 }
 
 export async function googleCallbackHandler(req: Request, res: Response) {
-  const code = req.query.code;
+  const code = req.query.code
+  if(!code || typeof code !== "string") return res.status(400).json({ error: "Code not found" });
   const state = req.query.state;
   const stateFromCookie = req.cookies?.google_oauth_state;
   if(!code) return res.status(400).json({ error: "Code not found" });
@@ -239,7 +240,7 @@ export async function googleCallbackHandler(req: Request, res: Response) {
       await user.save();
     }
     generateTokenSetCookie(res, user._id);
-    const redirectUrl =  `${process.env.MODE === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`
+    const redirectUrl = `${process.env.MODE === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`
     return res.redirect(redirectUrl);
   } catch (error) {
     let message = "Internal server error";
