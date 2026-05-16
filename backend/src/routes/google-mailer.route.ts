@@ -7,7 +7,7 @@ router.get("/google", (_req: Request, res: Response) => {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.MODE === "development"
+    process.env.NODE_ENV === "development"
       ? process.env.LOCAL_GOOGLE_REDIRECT_URI
       : process.env.PUBLIC_GOOGLE_REDIRECT_URI
   );
@@ -34,7 +34,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.MODE === "development"
+    process.env.NODE_ENV === "development"
       ? process.env.LOCAL_GOOGLE_REDIRECT_URI
       : process.env.PUBLIC_GOOGLE_REDIRECT_URI
   );
