@@ -51,3 +51,5 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     res.status(500).send("Error exchanging code for tokens");
   }
 });
+
+export default router;

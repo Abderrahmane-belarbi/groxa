@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { connectToDatabase } from "./config/db";
 import authRouter from "./routes/auth.routes";
+import mailerRouter from "./routes/google-mailer.route";
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -14,6 +15,7 @@ app.use(express.json()); // Parse JSON bodies
 app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
+app.use("/api/mailer", mailerRouter);
 
 app.get("/check", (req, res) => {
   res.json({ message: "Server is running!" });
