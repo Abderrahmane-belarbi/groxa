@@ -104,7 +104,7 @@ export async function VerificationEmail(req: Request, res: Response) {
       return res.status(400).json({ message: "Required fields are missing" });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Please Signup first" });
+    if (!user) return res.status(400).json({ message: "User not found" });
 
     if (user.emailVerified)
       return res.status(410).json({ message: "Email already verified" });
