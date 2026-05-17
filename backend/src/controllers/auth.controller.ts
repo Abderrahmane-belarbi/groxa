@@ -55,7 +55,7 @@ export async function Register(req: Request, res: Response) {
   }
 }
 
-export async function login(req: Request, res: Response)  {
+export async function Login(req: Request, res: Response)  {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ message: "Email and password are required" });
   try {
@@ -97,7 +97,7 @@ export async function login(req: Request, res: Response)  {
   }
 }
 
-export async function verificationEmail(req: Request, res: Response) {
+export async function VerificationEmail(req: Request, res: Response) {
   try {
     const { code, email } = req.body;
     if (!code || !email)
@@ -121,8 +121,8 @@ export async function verificationEmail(req: Request, res: Response) {
     }
 
     user.emailVerified = new Date();
-    user.emailVerificationTokenExpires = undefined;
-    user.emailVerificationToken = undefined;
+    user.emailVerificationTokenExpires = null;
+    user.emailVerificationToken = null;
 
     await user.save();
 
