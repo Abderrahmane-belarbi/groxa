@@ -149,7 +149,7 @@ export async function VerificationEmail(req: Request, res: Response) {
 function getGoogleClient() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.MODE === "development" ? process.env.LOCAL_GOOGLE_REDIRECT_URI : process.env.PUBLIC_GOOGLE_REDIRECT_URI;
+  const redirectUri = process.env.NODE_ENV === "development" ? process.env.LOCAL_GOOGLE_REDIRECT_URI : process.env.PUBLIC_GOOGLE_REDIRECT_URI;
   if(!clientId || !clientSecret || !redirectUri) throw new Error("Google client credentials not found");
   return new OAuth2Client({
     clientId,
@@ -161,7 +161,7 @@ function getGoogleClient() {
 function setGoogleOAuthStateCookie(res: Response, state: string) {
   res.cookie("google_oauth_state", state, {
     httpOnly: true,
-    secure: process.env.MODE !== "development",
+    secure: process.env.NODE_ENV !== "development",
     sameSite: "lax",
     maxAge: 10 * 60 * 1000, // 10 minutes
   });
@@ -170,7 +170,7 @@ function setGoogleOAuthStateCookie(res: Response, state: string) {
 function clearGoogleOAuthStateCookie(res: Response) {
   res.clearCookie("google_oauth_state", {
     httpOnly: true,
-    secure: process.env.MODE !== "development",
+    secure: process.env.NODE_ENV !== "development",
     sameSite: "lax",
   });
 }
