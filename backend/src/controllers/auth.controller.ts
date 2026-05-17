@@ -175,7 +175,7 @@ function clearGoogleOAuthStateCookie(res: Response) {
   });
 }
 
-export async function googleLoginHandler(req: Request, res: Response) {
+export async function googleLoginHandler(_req: Request, res: Response) {
   try {
     const client = getGoogleClient();
     const state = crypto.randomBytes(32).toString("hex");

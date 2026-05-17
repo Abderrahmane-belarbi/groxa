@@ -4,10 +4,10 @@ import { Types } from 'mongoose';
 
 
 export function generateTokenSetCookie(res: Response, userId: Types.ObjectId) {
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET is not defined in environment variables");
+  if (!process.env.JWT_ACCESS_SECRET) {
+    throw new Error("JWT_ACCESS_SECRET is not defined in environment variables");
   }
-  const token = jwt.sign({userId}, process.env.JWT_SECRET, {
+  const token = jwt.sign({userId}, process.env.JWT_ACCESS_SECRET, {
     expiresIn: "7d"
   });
 
