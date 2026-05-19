@@ -74,7 +74,9 @@ export async function Login(req: Request, res: Response)  {
 
     const isPasswordValid = await bcrypt.compare(password, user.password!);
     if (!isPasswordValid) return res.status(400).json({ message: "Invalid email or password" });
-
+    
+    // Check if email is verified
+    // You can delete the check if you don't want to force email verification before login
     if (!user.emailVerified) return res.status(403).json({ message: "Please verify your email before logging in" });
 
     // jwt

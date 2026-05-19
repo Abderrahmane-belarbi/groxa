@@ -7,7 +7,10 @@ export function generateTokenSetCookie(res: Response, userId: Types.ObjectId) {
   if (!process.env.JWT_ACCESS_SECRET) {
     throw new Error("JWT_ACCESS_SECRET is not defined in environment variables");
   }
-  const token = jwt.sign({userId}, process.env.JWT_ACCESS_SECRET, {
+  // Generate JWT token
+  // The token contains the user ID as a payload and is signed with a secret key. It expires in 7 days.
+  // you can adjust the payload and expiration time as needed. For example, you might want to include the user's role or permissions in the token payload.
+  const token = jwt.sign({ userId }, process.env.JWT_ACCESS_SECRET, {
     expiresIn: "7d"
   });
 
