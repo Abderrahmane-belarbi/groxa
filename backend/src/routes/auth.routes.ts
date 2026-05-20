@@ -1,11 +1,12 @@
 import express from "express";
-import { googleCallbackHandler, googleLoginHandler, Login, Register, VerificationEmail } from "../controllers/auth.controller";
+import { googleCallbackHandler, googleLoginHandler, login, logout, register, verificationEmail } from "../controllers/auth.controller";
 
 const router = express.Router();
 
-router.post("/register", Register);
-router.post("/login", Login);
-router.post("/verify-email", VerificationEmail);
+router.post("/register", register);
+router.post("/login", login);
+router.post("/logout", logout);
+router.post("/verify-email", verificationEmail);
 
 router.get("/google", googleLoginHandler);
 router.get("/google/callback", googleCallbackHandler);
