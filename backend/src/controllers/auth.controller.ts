@@ -261,7 +261,7 @@ export function logout(_req: Request, res: Response) {
 
 export async function refreshToken(req: Request, res: Response) {
   try {
-    const token = req.cookies?.token as string | undefined;
+    const token = req.cookies?.refreshToken as string | undefined;
     if (!token) return res.status(401).json({ error: "No token provided" });
     if (!process.env.JWT_ACCESS_SECRET) {
       throw new Error("JWT_ACCESS_SECRET is not defined in environment variables");
