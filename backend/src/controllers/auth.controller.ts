@@ -4,10 +4,40 @@ import { z } from "zod";
 import { User } from "../models/user.model";
 import bcrypt from "bcryptjs";
 import { generateVerificationToken, generateVerificationTokenExpiresAt } from "../utils/generate-verification-token";
-import { generateTokenSetCookie } from "../utils/generate-token-cookie";
+import { generateTokenSetCookie } from "../utils/token.utils";
 import { sendMail } from "../config/google-mailer";
 import { OAuth2Client } from "google-auth-library";
 import crypto from "crypto";
+import { verifyRefreshToken } from "../utils/token.utils";
+
+function getGoogleClient() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = process.env.NODE_ENV === "development" ? process.env.LOCAL_GOOGLE_REDIRECT_URI : process.env.PUBLIC_GOOGLE_REDIRECT_URI;
+  if(!clientId || !clientSecret || !redirectUri) throw new Error("Google client credentials not found");
+  return new OAuth2Client({
+    clientId,
+    clientSecret,
+    redirectUri,
+  })
+}
+
+function setGoogleOAuthStateCookie(res: Response, state: string) {
+  res.cookie("google_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== "development",
+    sameSite: "lax",
+    maxAge: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+function clearGoogleOAuthStateCookie(res: Response) {
+  res.clearCookie("google_oauth_state", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== "development",
+    sameSite: "lax",
+  });
+}
 
 export async function register(req: Request, res: Response) {
   const { name, email, password } = req.body;
@@ -80,7 +110,7 @@ export async function login(req: Request, res: Response)  {
     if (!user.emailVerified) return res.status(403).json({ message: "Please verify your email before logging in" });
 
     // jwt
-    generateTokenSetCookie(res, user._id);
+    generateTokenSetCookie(res, user._id, user.tokenVersion);
 
     return res.status(200).json({
       message: "Login successful",
@@ -129,7 +159,7 @@ export async function verificationEmail(req: Request, res: Response) {
     await user.save();
 
     // jwt
-    generateTokenSetCookie(res, user._id);
+    generateTokenSetCookie(res, user._id, user.tokenVersion);
 
     return res.status(200).json({
       message: "The email has been verified successfully",
@@ -146,35 +176,6 @@ export async function verificationEmail(req: Request, res: Response) {
     error instanceof Error && (message = error.message);
     return res.status(500).json({ message });
   }
-}
-
-function getGoogleClient() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.NODE_ENV === "development" ? process.env.LOCAL_GOOGLE_REDIRECT_URI : process.env.PUBLIC_GOOGLE_REDIRECT_URI;
-  if(!clientId || !clientSecret || !redirectUri) throw new Error("Google client credentials not found");
-  return new OAuth2Client({
-    clientId,
-    clientSecret,
-    redirectUri,
-  })
-}
-
-function setGoogleOAuthStateCookie(res: Response, state: string) {
-  res.cookie("google_oauth_state", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV !== "development",
-    sameSite: "lax",
-    maxAge: 10 * 60 * 1000, // 10 minutes
-  });
-}
-
-function clearGoogleOAuthStateCookie(res: Response) {
-  res.clearCookie("google_oauth_state", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV !== "development",
-    sameSite: "lax",
-  });
 }
 
 export async function googleLoginHandler(_req: Request, res: Response) {
@@ -241,7 +242,7 @@ export async function googleCallbackHandler(req: Request, res: Response) {
       }
       await user.save();
     }
-    generateTokenSetCookie(res, user._id);
+    generateTokenSetCookie(res, user._id, user.tokenVersion);
     const redirectUrl = `${process.env.MODE === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`
     return res.redirect(redirectUrl);
   } catch (error) {
@@ -256,4 +257,28 @@ export function logout(_req: Request, res: Response) {
   res
     .status(200)
     .json({ message: "Logged out successfully" });
+}
+
+export async function refreshToken(req: Request, res: Response) {
+  try {
+    const token = req.cookies?.token as string | undefined;
+    if (!token) return res.status(401).json({ error: "No token provided" });
+    if (!process.env.JWT_ACCESS_SECRET) {
+      throw new Error("JWT_ACCESS_SECRET is not defined in environment variables");
+    }
+    const payload = verifyRefreshToken(token);
+    console.log('payload:', payload)
+    const user = await User.findById(payload.userId);
+    if (!user) return res.status(401).json({ error: "User not found" });
+    if (user.tokenVersion !== payload.tokenVersion) {
+      return res.status(401).json({ error: "Token has been revoked" });
+    }
+    generateTokenSetCookie(res, user._id, user.tokenVersion);
+    return res.status(200).json({ message: "Token refreshed successfully" });
+
+  } catch (error) {
+    let message = "Internal server error";
+    error instanceof Error && (message = error.message);
+    return res.status(500).json({ error: message });
+  }
 }
