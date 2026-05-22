@@ -4,7 +4,7 @@ import { z } from "zod";
 import { User } from "../models/user.model";
 import bcrypt from "bcryptjs";
 import { generateVerificationToken, generateVerificationTokenExpiresAt } from "../utils/generate-verification-token";
-import { generateTokenSetCookie } from "../utils/token.utils";
+import { createRefreshToken, generateTokenSetCookie } from "../utils/token.utils";
 import { sendMail } from "../config/google-mailer";
 import { OAuth2Client } from "google-auth-library";
 import crypto from "crypto";
@@ -274,6 +274,15 @@ export async function refreshToken(req: Request, res: Response) {
       return res.status(401).json({ error: "Token has been revoked" });
     }
     generateTokenSetCookie(res, user._id, user.tokenVersion);
+    const newRefreshToken = createRefreshToken(user._id, user.tokenVersion);
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // expire in 7 days
+    })
+    
     return res.status(200).json({ message: "Token refreshed successfully" });
 
   } catch (error) {

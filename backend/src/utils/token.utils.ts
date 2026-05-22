@@ -32,6 +32,21 @@ export function generateTokenSetCookie(
   return token;
 }
 
+export function createRefreshToken(userId: Types.ObjectId, tokenVersion: number) {
+  if (!process.env.JWT_REFRESH_SECRET) {
+    throw new Error(
+      "JWT_REFRESH_SECRET is not defined in environment variables",
+    );
+  }
+  return jwt.sign(
+    { userId, tokenVersion },
+    process.env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: "30d",
+    },
+  );
+}
+
 export function verifyRefreshToken(token: string) {
-  return jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as { userId: string, tokenVersion: number };
+  return jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as { userId: string, tokenVersion: number };
 }
