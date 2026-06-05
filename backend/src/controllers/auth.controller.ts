@@ -318,3 +318,41 @@ export async function refreshToken(req: Request, res: Response) {
     return res.status(500).json({ error: message });
   }
 }
+
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email is required" });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+    
+    // Generate reset token and hash it for security
+    const resetPasswordToken = crypto.randomUUID();
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetPasswordToken)
+      .digest("hex");
+    // Update user token
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordTokenExpires = new Date(Date.now() + 10 * 60 * 1000); // expires in 10 min
+    await user.save();
+
+    // Send email to user resetPasswordToken not the hashed
+    // Send the raw token to the user in the link
+    // When user comes back with raw token, you hash it and compare to DB
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetPasswordToken}`;
+    sendMail({
+      to: user.email,
+      subject: "Reset your password",
+      text: `You requested a password reset. Use this link to reset your password:\n${resetUrl} (expires in 10 minutes).\nIf you didn't request this, ignore this email.`,
+    });
+
+    return res.status(200).json({
+      message:
+        "If an account exists, a reset link has been sent. Check your inbox and spam folder.",
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return res.status(500).json({ error: message });
+  }
+}

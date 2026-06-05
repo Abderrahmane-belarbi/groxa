@@ -13,7 +13,9 @@ const userSchema = new Schema(
     twoFactorSecret: String,
     tokenVersion: { type: Number, default: 0 },
     resetPasswordToken: String,
-    resetPasswordExpires: Date,
+    resetPasswordTokenExpires: Date,
+    resetPasswordCode: String,
+    resetPasswordCodeExpires: Date,
 
   },
   { timestamps: true },
