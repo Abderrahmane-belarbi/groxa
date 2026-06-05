@@ -1,10 +1,19 @@
 import { Request, Response } from "express";
-import { loginSchema, registerSchema } from "../lib/validations/auth.validation";
+import {
+  loginSchema,
+  registerSchema,
+} from "../lib/validations/auth.validation";
 import { z } from "zod";
 import { User } from "../models/user.model";
 import bcrypt from "bcryptjs";
-import { generateVerificationToken, generateVerificationTokenExpiresAt } from "../utils/generate-verification-token";
-import { createRefreshToken, generateTokenSetCookie } from "../utils/token.utils";
+import {
+  generateVerificationToken,
+  generateVerificationTokenExpiresAt,
+} from "../utils/generate-verification-token";
+import {
+  createRefreshToken,
+  generateTokenSetCookie,
+} from "../utils/token.utils";
 import { sendMail } from "../config/google-mailer";
 import { OAuth2Client } from "google-auth-library";
 import crypto from "crypto";
@@ -13,13 +22,17 @@ import { verifyRefreshToken } from "../utils/token.utils";
 function getGoogleClient() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.NODE_ENV === "development" ? process.env.LOCAL_GOOGLE_REDIRECT_URI : process.env.PUBLIC_GOOGLE_REDIRECT_URI;
-  if(!clientId || !clientSecret || !redirectUri) throw new Error("Google client credentials not found");
+  const redirectUri =
+    process.env.NODE_ENV === "development"
+      ? process.env.LOCAL_GOOGLE_REDIRECT_URI
+      : process.env.PUBLIC_GOOGLE_REDIRECT_URI;
+  if (!clientId || !clientSecret || !redirectUri)
+    throw new Error("Google client credentials not found");
   return new OAuth2Client({
     clientId,
     clientSecret,
     redirectUri,
-  })
+  });
 }
 
 function setGoogleOAuthStateCookie(res: Response, state: string) {
@@ -41,16 +54,21 @@ function clearGoogleOAuthStateCookie(res: Response) {
 
 export async function register(req: Request, res: Response) {
   const { name, email, password } = req.body;
-  if(!name || !email || !password) return res.status(400).json({ message: "All fields are required" })
+  if (!name || !email || !password)
+    return res.status(400).json({ message: "All fields are required" });
   try {
-    const result = await registerSchema.safeParseAsync({ name, email, password });
-    if(!result.success) {
+    const result = await registerSchema.safeParseAsync({
+      name,
+      email,
+      password,
+    });
+    if (!result.success) {
       const Flaterrors = z.flattenError(result.error).fieldErrors;
       const errors = {
         name: Flaterrors.name?.[0] || undefined,
         email: Flaterrors.email?.[0] || undefined,
         password: Flaterrors.password?.[0] || undefined,
-      }
+      };
       return res.status(400).json({ message: "Validation failed", errors });
     }
     const normalizedEmail = email.toLowerCase().trim();
@@ -77,17 +95,19 @@ export async function register(req: Request, res: Response) {
       text: `Your verification code is ${verificationToken}`,
     });
 
-    res.status(201).json({ message: "User registered successfully", user: newUser });
-
+    res
+      .status(201)
+      .json({ message: "User registered successfully", user: newUser });
   } catch (error) {
     console.error("Error in register controller:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-export async function login(req: Request, res: Response)  {
+export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ message: "Email and password are required" });
+  if (!email || !password)
+    return res.status(400).json({ message: "Email and password are required" });
   try {
     const result = await loginSchema.safeParseAsync({ email, password });
     if (!result.success) {
@@ -95,19 +115,24 @@ export async function login(req: Request, res: Response)  {
       const errors = {
         email: Flaterrors.email?.[0] || undefined,
         password: Flaterrors.password?.[0] || undefined,
-      }
+      };
       return res.status(400).json({ message: "Validation failed", errors });
     }
     const normalizedEmail = email.toLowerCase().trim();
     const user = await User.findOne({ email: normalizedEmail });
-    if (!user) return res.status(400).json({ message: "Invalid email or password" });
+    if (!user)
+      return res.status(400).json({ message: "Invalid email or password" });
 
     const isPasswordValid = await bcrypt.compare(password, user.password!);
-    if (!isPasswordValid) return res.status(400).json({ message: "Invalid email or password" });
-    
+    if (!isPasswordValid)
+      return res.status(400).json({ message: "Invalid email or password" });
+
     // Check if email is verified
     // You can delete the check if you don't want to force email verification before login
-    if (!user.emailVerified) return res.status(403).json({ message: "Please verify your email before logging in" });
+    if (!user.emailVerified)
+      return res
+        .status(403)
+        .json({ message: "Please verify your email before logging in" });
 
     // jwt
     generateTokenSetCookie(res, user._id, user.tokenVersion);
@@ -187,7 +212,7 @@ export async function googleLoginHandler(_req: Request, res: Response) {
       access_type: "offline",
       scope: ["openid", "profile", "email"],
       prompt: "consent",
-      state // for CSRF protection
+      state, // for CSRF protection
     });
     return res.redirect(url);
   } catch (error) {
@@ -198,12 +223,13 @@ export async function googleLoginHandler(_req: Request, res: Response) {
 }
 
 export async function googleCallbackHandler(req: Request, res: Response) {
-  const code = req.query.code
-  if(!code || typeof code !== "string") return res.status(400).json({ error: "Code not found" });
+  const code = req.query.code;
+  if (!code || typeof code !== "string")
+    return res.status(400).json({ error: "Code not found" });
   const state = req.query.state;
   const stateFromCookie = req.cookies?.google_oauth_state;
-  if(!code) return res.status(400).json({ error: "Code not found" });
-  if(!state || !stateFromCookie || state !== stateFromCookie) {
+  if (!code) return res.status(400).json({ error: "Code not found" });
+  if (!state || !stateFromCookie || state !== stateFromCookie) {
     clearGoogleOAuthStateCookie(res);
     return res.status(400).json({ error: "Invalid OAuth state" });
   }
@@ -211,7 +237,8 @@ export async function googleCallbackHandler(req: Request, res: Response) {
     clearGoogleOAuthStateCookie(res);
     const client = getGoogleClient();
     const { tokens } = await client.getToken(code);
-    if(!tokens?.id_token) return res.status(400).json({ error: "Google ID token not found" });
+    if (!tokens?.id_token)
+      return res.status(400).json({ error: "Google ID token not found" });
     // verify token and read the user info from it
     const ticket = await client.verifyIdToken({
       idToken: tokens.id_token,
@@ -223,19 +250,20 @@ export async function googleCallbackHandler(req: Request, res: Response) {
     }
     const email = payload?.email;
     const emailVerified = payload?.email_verified;
-    if(!email || !emailVerified) return res.status(400).json({ error: "Email not verified" });
+    if (!email || !emailVerified)
+      return res.status(400).json({ error: "Email not verified" });
     const emailNormalized = email.toLowerCase().trim();
-    let user = await User.findOne({email: emailNormalized});
+    let user = await User.findOne({ email: emailNormalized });
 
-    if(!user) {      
+    if (!user) {
       user = await User.create({
         name: payload?.name,
         email: emailNormalized,
         password: undefined,
         emailVerified: new Date(),
-      })
+      });
     } else {
-      if(!user.emailVerified) {
+      if (!user.emailVerified) {
         user.emailVerified = new Date();
         user.emailVerificationToken = null;
         user.emailVerificationTokenExpires = null;
@@ -243,7 +271,7 @@ export async function googleCallbackHandler(req: Request, res: Response) {
       await user.save();
     }
     generateTokenSetCookie(res, user._id, user.tokenVersion);
-    const redirectUrl = `${process.env.MODE === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`
+    const redirectUrl = `${process.env.MODE === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`;
     return res.redirect(redirectUrl);
   } catch (error) {
     let message = "Internal server error";
@@ -254,9 +282,7 @@ export async function googleCallbackHandler(req: Request, res: Response) {
 
 export function logout(_req: Request, res: Response) {
   res.clearCookie("token");
-  res
-    .status(200)
-    .json({ message: "Logged out successfully" });
+  return res.status(200).json({ message: "Logged out successfully" });
 }
 
 export async function refreshToken(req: Request, res: Response) {
@@ -264,10 +290,12 @@ export async function refreshToken(req: Request, res: Response) {
     const token = req.cookies?.refreshToken as string | undefined;
     if (!token) return res.status(401).json({ error: "No token provided" });
     if (!process.env.JWT_ACCESS_SECRET) {
-      throw new Error("JWT_ACCESS_SECRET is not defined in environment variables");
+      throw new Error(
+        "JWT_ACCESS_SECRET is not defined in environment variables",
+      );
     }
     const payload = verifyRefreshToken(token);
-    console.log('payload:', payload)
+    console.log("payload:", payload);
     const user = await User.findById(payload.userId);
     if (!user) return res.status(401).json({ error: "User not found" });
     if (user.tokenVersion !== payload.tokenVersion) {
@@ -281,10 +309,9 @@ export async function refreshToken(req: Request, res: Response) {
       secure: process.env.NODE_ENV !== "development",
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // expire in 7 days
-    })
-    
-    return res.status(200).json({ message: "Token refreshed successfully" });
+    });
 
+    return res.status(200).json({ message: "Token refreshed successfully" });
   } catch (error) {
     let message = "Internal server error";
     error instanceof Error && (message = error.message);

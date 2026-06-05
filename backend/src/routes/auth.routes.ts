@@ -8,7 +8,7 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.post("/verify-email", verificationEmail);
 
-router.post("/refresh-token", refreshToken); 
+router.post("/refresh-token", refreshToken);
 
 router.get("/google", googleLoginHandler);
 router.get("/google/callback", googleCallbackHandler);
