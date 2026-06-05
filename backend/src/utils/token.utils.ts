@@ -32,21 +32,70 @@ export function generateTokenSetCookie(
   return token;
 }
 
-export function createRefreshToken(userId: Types.ObjectId, tokenVersion: number) {
+export function createRefreshToken(
+  userId: Types.ObjectId,
+  tokenVersion: number,
+) {
   if (!process.env.JWT_REFRESH_SECRET) {
     throw new Error(
       "JWT_REFRESH_SECRET is not defined in environment variables",
     );
   }
-  return jwt.sign(
-    { userId, tokenVersion },
-    process.env.JWT_REFRESH_SECRET,
-    {
-      expiresIn: "30d",
-    },
-  );
+  return jwt.sign({ userId, tokenVersion }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: "30d",
+  });
 }
 
 export function verifyRefreshToken(token: string) {
-  return jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as { userId: string, tokenVersion: number };
+  return jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as {
+    userId: string;
+    tokenVersion: number;
+  };
+}
+
+export function setAccessTokenCookie(
+  res: Response,
+  userId: Types.ObjectId,
+  tokenVersion: number,
+) {
+  const token = jwt.sign(
+    { userId, tokenVersion },
+    process.env.JWT_ACCESS_SECRET!,
+    {
+      expiresIn: "7d",
+    },
+  );
+  res.cookie("accessToken", token, {
+    httpOnly: true, // It prevents JavaScript in the browser from reading the cookie (prevent xss attacks)
+    secure: process.env.NODE_ENV === "production", // cookie is only sent over HTTPS. in production mode
+    sameSite: "strict", // This reduces CSRF risk by telling the browser: “Do not send this cookie on cross-site requests.”
+    maxAge: 7 * 24 * 60 * 60 * 1000, // expire in 7 days
+  });
+  return token;
+}
+
+export function setRefreshTokenCookie(
+  res: Response,
+  userId: Types.ObjectId,
+  tokenVersion: number,
+) {
+  const refreshToken = createRefreshToken(userId, tokenVersion);
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true, // It prevents JavaScript in the browser from reading the cookie (prevent xss attacks)
+    secure: process.env.NODE_ENV === "production", // cookie is only sent over HTTPS. in production mode
+    sameSite: "strict", // This reduces CSRF risk by telling the browser: “Do not send this cookie on cross-site requests.”
+    maxAge: 30 * 24 * 60 * 60 * 1000, // expire in 30 days
+  });
+  return refreshToken;
+}
+
+export function setAuthCookies(
+  res: Response,
+  userId: Types.ObjectId,
+  tokenVersion: number,
+) {
+  return {
+    accessToken: setAccessTokenCookie(res, userId, tokenVersion),
+    refreshToken: setRefreshTokenCookie(res, userId, tokenVersion),
+  };
 }
