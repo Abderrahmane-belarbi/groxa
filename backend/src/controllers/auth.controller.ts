@@ -283,7 +283,8 @@ export async function googleCallbackHandler(req: Request, res: Response) {
 }
 
 export function logout(_req: Request, res: Response) {
-  res.clearCookie("token");
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
   return res.status(200).json({ message: "Logged out successfully" });
 }
 

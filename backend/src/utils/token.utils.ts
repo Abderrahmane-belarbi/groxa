@@ -56,7 +56,7 @@ export function createAccessToken(
     );
   }
   return jwt.sign({ userId, tokenVersion }, process.env.JWT_ACCESS_SECRET, {
-    expiresIn: "7d",
+    expiresIn: "15m",
   });
 }
 
@@ -77,7 +77,7 @@ export function setAccessTokenCookie(
     httpOnly: true, // It prevents JavaScript in the browser from reading the cookie (prevent xss attacks)
     secure: process.env.NODE_ENV === "production", // cookie is only sent over HTTPS. in production mode
     sameSite: "strict", // This reduces CSRF risk by telling the browser: “Do not send this cookie on cross-site requests.”
-    maxAge: 7 * 24 * 60 * 60 * 1000, // expire in 7 days
+    maxAge: 15 * 60 * 1000, // expire in 15 min
   });
   return accessToken;
 }
