@@ -12,7 +12,7 @@ import {
 } from "../utils/generate-verification-token";
 import {
   createRefreshToken,
-  generateTokenSetCookie,
+  setAuthCookies,
 } from "../utils/token.utils";
 import { sendMail } from "../config/google-mailer";
 import { OAuth2Client } from "google-auth-library";
@@ -135,7 +135,7 @@ export async function login(req: Request, res: Response) {
         .json({ message: "Please verify your email before logging in" });
 
     // jwt
-    generateTokenSetCookie(res, user._id, user.tokenVersion);
+    const authCookies = setAuthCookies(res, user._id, user.tokenVersion);
 
     return res.status(200).json({
       message: "Login successful",
@@ -144,6 +144,7 @@ export async function login(req: Request, res: Response) {
         name: user.name,
         email: user.email,
         emailVerified: user.emailVerified ? true : false,
+        ...authCookies,
       },
     });
   } catch (error) {
@@ -184,7 +185,7 @@ export async function verificationEmail(req: Request, res: Response) {
     await user.save();
 
     // jwt
-    generateTokenSetCookie(res, user._id, user.tokenVersion);
+    const authCookies = setAuthCookies(res, user._id, user.tokenVersion);
 
     return res.status(200).json({
       message: "The email has been verified successfully",
@@ -193,6 +194,7 @@ export async function verificationEmail(req: Request, res: Response) {
         name: user.name,
         email: user.email,
         emailVerified: user.emailVerified ? true : false,
+        ...authCookies
       },
     });
   } catch (error) {
@@ -270,7 +272,7 @@ export async function googleCallbackHandler(req: Request, res: Response) {
       }
       await user.save();
     }
-    generateTokenSetCookie(res, user._id, user.tokenVersion);
+    setAuthCookies(res, user._id, user.tokenVersion);
     const redirectUrl = `${process.env.MODE === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`;
     return res.redirect(redirectUrl);
   } catch (error) {
@@ -301,17 +303,9 @@ export async function refreshToken(req: Request, res: Response) {
     if (user.tokenVersion !== payload.tokenVersion) {
       return res.status(401).json({ error: "Token has been revoked" });
     }
-    generateTokenSetCookie(res, user._id, user.tokenVersion);
-    const newRefreshToken = createRefreshToken(user._id, user.tokenVersion);
+    const authCookies = setAuthCookies(res, user._id, user.tokenVersion);
 
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== "development",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // expire in 7 days
-    });
-
-    return res.status(200).json({ message: "Token refreshed successfully" });
+    return res.status(200).json({ message: "Token refreshed successfully", authCookies });
   } catch (error) {
     let message = "Internal server error";
     error instanceof Error && (message = error.message);
