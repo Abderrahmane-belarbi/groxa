@@ -107,3 +107,8 @@ export function setAuthCookies(
     refreshToken: setRefreshTokenCookie(res, userId, tokenVersion),
   };
 }
+
+export function clearAuthCookies(res: Response) {
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+}

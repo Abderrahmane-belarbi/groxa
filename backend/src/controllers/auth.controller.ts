@@ -11,6 +11,7 @@ import {
   generateVerificationTokenExpiresAt,
 } from "../utils/generate-verification-token";
 import {
+  clearAuthCookies,
   setAuthCookies,
 } from "../utils/token.utils";
 import { sendMail } from "../config/google-mailer";
@@ -291,8 +292,7 @@ export async function logout(req: Request, res: Response) {
   } catch (error) {
     console.error("Error revoking refresh token during logout:", error);
   } finally {
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    clearAuthCookies(res);
   }
   return res.status(200).json({ message: "Logged out successfully" });
 }
@@ -300,17 +300,24 @@ export async function logout(req: Request, res: Response) {
 export async function refreshToken(req: Request, res: Response) {
   try {
     const token = req.cookies?.refreshToken as string | undefined;
-    if (!token) return res.status(401).json({ error: "No token provided" });
-    if (!process.env.JWT_ACCESS_SECRET) {
+    if (!token) {
+      clearAuthCookies(res);
+      return res.status(401).json({ error: "No token provided" });
+    }
+    if (!process.env.JWT_REFRESH_SECRET) {
       throw new Error(
-        "JWT_ACCESS_SECRET is not defined in environment variables",
+        "JWT_REFRESH_SECRET is not defined in environment variables",
       );
     }
     const payload = verifyRefreshToken(token);
     console.log("payload:", payload);
     const user = await User.findById(payload.userId);
-    if (!user) return res.status(401).json({ error: "User not found" });
+    if (!user) {
+      clearAuthCookies(res);
+      return res.status(401).json({ error: "User not found" });
+    }
     if (user.tokenVersion !== payload.tokenVersion) {
+      clearAuthCookies(res);
       return res.status(401).json({ error: "Token has been revoked" });
     }
     // Create new tokens and set cookies
@@ -318,6 +325,7 @@ export async function refreshToken(req: Request, res: Response) {
 
     return res.status(200).json({ message: "Token refreshed successfully" });
   } catch (error) {
+    clearAuthCookies(res);
     let message = "Internal server error";
     error instanceof Error && (message = error.message);
     return res.status(500).json({ error: message });
