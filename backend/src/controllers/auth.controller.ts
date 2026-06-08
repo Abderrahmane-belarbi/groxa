@@ -11,7 +11,6 @@ import {
   generateVerificationTokenExpiresAt,
 } from "../utils/generate-verification-token";
 import {
-  createRefreshToken,
   setAuthCookies,
 } from "../utils/token.utils";
 import { sendMail } from "../config/google-mailer";
@@ -135,7 +134,7 @@ export async function login(req: Request, res: Response) {
         .json({ message: "Please verify your email before logging in" });
 
     // jwt
-    const authCookies = setAuthCookies(res, user._id, user.tokenVersion);
+    setAuthCookies(res, user._id, user.tokenVersion);
 
     return res.status(200).json({
       message: "Login successful",
@@ -144,7 +143,6 @@ export async function login(req: Request, res: Response) {
         name: user.name,
         email: user.email,
         emailVerified: user.emailVerified ? true : false,
-        ...authCookies,
       },
     });
   } catch (error) {
@@ -185,7 +183,7 @@ export async function verificationEmail(req: Request, res: Response) {
     await user.save();
 
     // jwt
-    const authCookies = setAuthCookies(res, user._id, user.tokenVersion);
+    setAuthCookies(res, user._id, user.tokenVersion);
 
     return res.status(200).json({
       message: "The email has been verified successfully",
@@ -194,7 +192,6 @@ export async function verificationEmail(req: Request, res: Response) {
         name: user.name,
         email: user.email,
         emailVerified: user.emailVerified ? true : false,
-        ...authCookies
       },
     });
   } catch (error) {
@@ -282,7 +279,18 @@ export async function googleCallbackHandler(req: Request, res: Response) {
   }
 }
 
-export function logout(_req: Request, res: Response) {
+export async function logout(req: Request, res: Response) {
+  try {
+    const token = req.cookies?.refreshToken as string | undefined;
+    if (token) {
+      const payload = verifyRefreshToken(token);
+      await User.findByIdAndUpdate(payload.userId, {
+        $inc: { tokenVersion: 1 },
+      })
+    }
+  } catch (error) {
+    
+  }
   res.clearCookie("accessToken");
   res.clearCookie("refreshToken");
   return res.status(200).json({ message: "Logged out successfully" });
@@ -304,9 +312,10 @@ export async function refreshToken(req: Request, res: Response) {
     if (user.tokenVersion !== payload.tokenVersion) {
       return res.status(401).json({ error: "Token has been revoked" });
     }
-    const authCookies = setAuthCookies(res, user._id, user.tokenVersion);
+    // Create new tokens and set cookies
+    setAuthCookies(res, user._id, user.tokenVersion);
 
-    return res.status(200).json({ message: "Token refreshed successfully", authCookies });
+    return res.status(200).json({ message: "Token refreshed successfully" });
   } catch (error) {
     let message = "Internal server error";
     error instanceof Error && (message = error.message);
