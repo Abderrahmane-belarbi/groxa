@@ -286,13 +286,14 @@ export async function logout(req: Request, res: Response) {
       const payload = verifyRefreshToken(token);
       await User.findByIdAndUpdate(payload.userId, {
         $inc: { tokenVersion: 1 },
-      })
+      });
     }
   } catch (error) {
-    
+    console.error("Error revoking refresh token during logout:", error);
+  } finally {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
   }
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
   return res.status(200).json({ message: "Logged out successfully" });
 }
 
