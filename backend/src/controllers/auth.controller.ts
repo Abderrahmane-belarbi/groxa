@@ -229,7 +229,6 @@ export async function googleCallbackHandler(req: Request, res: Response) {
     return res.status(400).json({ error: "Code not found" });
   const state = req.query.state;
   const stateFromCookie = req.cookies?.google_oauth_state;
-  if (!code) return res.status(400).json({ error: "Code not found" });
   if (!state || !stateFromCookie || state !== stateFromCookie) {
     clearGoogleOAuthStateCookie(res);
     return res.status(400).json({ error: "Invalid OAuth state" });
@@ -272,7 +271,7 @@ export async function googleCallbackHandler(req: Request, res: Response) {
       await user.save();
     }
     setAuthCookies(res, user._id, user.tokenVersion);
-    const redirectUrl = `${process.env.MODE === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`;
+    const redirectUrl = `${process.env.NODE_ENV === "development" ? process.env.LOCAL_CLIENT_URL : process.env.PUBLIC_CLIENT_URL}/dashboard`;
     return res.redirect(redirectUrl);
   } catch (error) {
     let message = "Internal server error";
