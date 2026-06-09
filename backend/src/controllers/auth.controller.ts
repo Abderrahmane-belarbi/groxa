@@ -4,6 +4,7 @@ import {
   registerSchema,
 } from "../lib/validations/auth.validation";
 import { z } from "zod";
+import jwt from "jsonwebtoken";
 import { User } from "../models/user.model";
 import bcrypt from "bcryptjs";
 import {
@@ -320,12 +321,20 @@ export async function refreshToken(req: Request, res: Response) {
       clearAuthCookies(res);
       return res.status(401).json({ error: "Token has been revoked" });
     }
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      { $inc: { tokenVersion: 1 } },
+      { new: true }
+    );
     // Create new tokens and set cookies
-    setAuthCookies(res, user._id, user.tokenVersion);
+    setAuthCookies(res, user._id, updatedUser!.tokenVersion);
 
     return res.status(200).json({ message: "Token refreshed successfully" });
   } catch (error) {
     clearAuthCookies(res);
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
     let message = "Internal server error";
     error instanceof Error && (message = error.message);
     return res.status(500).json({ error: message });
